@@ -76,7 +76,7 @@ int main(void)
 
     // Define player position and size
     Rectangle player = { mazePosition.x + startCell.x*128.0f, mazePosition.y + startCell.y*128.0f + 2, 4*MAZE_SCALE, 4*MAZE_SCALE };
-    float playerSpeed = 200.0f;
+    float playerSpeed = 400.0f;
     Point playerCell = {startCell.x, startCell.y };
     Rectangle playerBounds[4] = {0};
 
@@ -104,6 +104,14 @@ int main(void)
     texBiomes[2] = LoadTexture("resources/maze_atlas03.png");
     texBiomes[3] = LoadTexture("resources/maze_atlas04.png");
     int currentBiome = 0;
+    
+    
+    //Player sprite texture
+    Texture2D playerTex = LoadTexture("resources/player_sprite.png"); 
+
+    Rectangle playerSrcRec = { 0.0f, 0.0f, (float)playerTex.width, (float)playerTex.height };
+
+    Vector2 playerOrigin = { (float)playerTex.width / 2.0f, (float)playerTex.height / 2.0f };
 
     // TODO: Define all variables required for game UI elements (sprites, fonts...)
     
@@ -281,8 +289,7 @@ int main(void)
                 
                 // DONE: Draw player rectangle or sprite at player position
                 
-                DrawRectangleRec(player, BLUE); 
-                
+                Rectangle playerDestRec = { player.x + player.width/2.0f, player.y + player.height/2.0f, (float)playerTex.width * MAZE_SCALE/2.0f, (float)playerTex.height * MAZE_SCALE/2.0f };DrawTexturePro(playerTex, playerSrcRec, playerDestRec, playerOrigin, 0.0f, WHITE);                
                 // TODO: Draw maze items 2d (using sprite texture?)
 
                 EndMode2D();
@@ -344,7 +351,7 @@ int main(void)
     //--------------------------------------------------------------------------------------
     UnloadTexture(texMaze);     // Unload maze texture from VRAM (GPU)
     UnloadImage(imMaze);        // Unload maze image from RAM (CPU)
-
+    UnloadTexture(playerTex); // Unload player texture
     CloseWindow();              // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
 
