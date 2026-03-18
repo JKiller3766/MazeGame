@@ -1,23 +1,47 @@
+#########################################################################################
+	
+	The following textures are licensed under a CC0 1.0 Universal.
 
-The following textures are licensed under a CC0 1.0 Universal.
+ 	- maze_atlas02.png
+ 	- maze_atlas03.png
+ 	- maze_atlas04.png
+ 	- maze_atlas05.png
 
- - maze_atlas01.png
- - maze_atlas02.png
- - maze_atlas03.png
- - maze_atlas04.png
- - soft_music.ogg
- - coin_sfx.wav
- - player_sprite.png
- - item_sprite.png
+#########################################################################################
 
+ 	soft_music.ogg
 
-CC0 1.0 Universal
+	LICENSE CC-0 (Public Domain)
 
-By marking the work with a CC0 public domain dedication, the creator is giving up their copyright and allowing reusers to distribute, remix, adapt, and build upon the material in any medium or format, even for commercial purposes.
+	To the extent possible under law, Abstraction Music and Tallbeard Studios has waived all copyright and related or neighboring 	rights to the music contained in this asset pack. This work is published from the United States.
 
-CC0: This work has been marked as dedicated to the public domain.
+	All assets are available to use in any commercial or non-commercial project, and may be modified in any way the user chooses.
 
-Canonical URL: https://creativecommons.org/publicdomain/zero/1.0/
+	Finally, although permitted within the license terms, Abstraction and Tallbeard Studios do not endorse the use of these assets in 	any projects relating to NFTs, AI/Machine Learning, or direct resale of unmodified assets. 
 
+#########################################################################################
 
+	coin_sfx.wav
+
+	rFXGen License
+	rFXGen source code is distributed as open source, licensed under an unmodified zlib/libpng license.
+	rFXGen binaries are completely free for anyone willing to compile it directly from source.
+	rFXGen Standalone desktop tool is distributed as freeware.
+	In any case, consider some donation to help the author keep working on software for games development.
+	Copyright (c) 2015-2024 raylib technologies (@raylibtech) / Ramon Santamaria (@raysan5)
+
+#########################################################################################
+	
+	item_sprite.png, player_sprite.png and maze_atlas01.png
+
+	Created by our Team
+
+	LICENSE - CC BY-SA 4.0
+
+	This license requires that reusers give credit to the creator. It allows reusers to distribute, 
+	remix, adapt, and build upon the material in any medium or format, even for commercial purposes. 
+	If others remix, adapt, or build upon the material, they must license the modified material
+	under identical terms.
+
+#########################################################################################
 

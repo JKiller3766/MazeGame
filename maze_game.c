@@ -29,11 +29,11 @@ typedef struct Point {
 
 // Generate procedural maze image, using grid-based algorithm
 // NOTE: Functions defined as static are internal to the module
-static Image GenImageMaze(int width, int height, int spacingRows, int spacingCols, float pointChance);
-static void UpdateMinimap(Image imMaze, Point *playerCell, Texture2D *texMaze);
+static Image GenImageMaze(int width, int height, int spacing_rows, int spacing_cols, float point_chance);
+static void UpdateMinimap(Image im_maze, Point *player_cell, Texture2D *tex_maze);
+static void EndScene(int score);
 
-
-static int LoadItems(Image imMaze, Point *mazeItems, bool *mazeItemPicked);
+static int LoadItems(Image im_maze, Point *maze_items, bool *maze_item_picked);
 
 //----------------------------------------------------------------------------------
 // Main entry point
@@ -50,7 +50,7 @@ int main(void)
     InitAudioDevice();
 
     // Current application mode
-    int currentMode = 1;    // 0-Game, 1-Editor
+    int current_mode = 1;    // 0-Game, 1-Editor
 
     // Random seed defines the random numbers generation,
     // always the same if using the same seed
@@ -59,31 +59,31 @@ int main(void)
 
     // Generate maze image using the grid-based generator
     // TODO: [1p] Implement GenImageMaze() function with required parameters
-    Image imMaze = GenImageMaze(MAZE_WIDTH, MAZE_HEIGHT, 4, 4, 1.0f);    
+    Image im_maze = GenImageMaze(MAZE_WIDTH, MAZE_HEIGHT, 4, 4, 1.0f);    
 
     // Player start-position and end-position initialization
-    Point startCell = { 1, 1 };
-    Point endCell = { imMaze.width - 2, imMaze.height - 2 };
-    ImageDrawPixel(&imMaze, endCell.x, endCell.y, GREEN);
+    Point start_cell = { 1, 1 };
+    Point end_cell = { im_maze.width - 2, im_maze.height - 2 };
+    ImageDrawPixel(&im_maze, end_cell.x, end_cell.y, GREEN);
     
     // Load a texture to be drawn on screen from our image data
-    // WARNING: If imMaze pixel data is modified, texMaze needs to be re-loaded
-    Texture texMaze = LoadTextureFromImage(imMaze);
+    // WARNING: If im_maze pixel data is modified, tex_maze needs to be re-loaded
+    Texture tex_maze = LoadTextureFromImage(im_maze);
     
 	//Minimap
-	bool cellChange = false;
+	bool cell_change = false;
 
     // Maze drawing position (editor mode)
-    Vector2 mazePosition = {
-        GetScreenWidth()/2 - texMaze.width*MAZE_SCALE/2,
-        GetScreenHeight()/2 - texMaze.height*MAZE_SCALE/2
+    Vector2 maze_position = {
+        GetScreenWidth()/2 - tex_maze.width*MAZE_SCALE/2,
+        GetScreenHeight()/2 - tex_maze.height*MAZE_SCALE/2
     };
 
     // Define player position and size
-    Rectangle player = { mazePosition.x + startCell.x*128.0f, mazePosition.y + startCell.y*128.0f + 2, 6*MAZE_SCALE, 8*MAZE_SCALE };
-    float playerSpeed = 400.0f;
-    Point playerCell = {startCell.x, startCell.y };
-    Rectangle playerBounds[4] = {0};
+    Rectangle player = { maze_position.x + start_cell.x*128.0f, maze_position.y + start_cell.y*128.0f + 2, 6*MAZE_SCALE, 8*MAZE_SCALE };
+    float player_speed = 400.0f;
+    Point player_cell = {start_cell.x, start_cell.y };
+    Rectangle player_bounds[4] = {0};
 
     // Camera 2D for 2d gameplay mode
     // TODO: [2p] Initialize camera parameters as required
@@ -94,34 +94,32 @@ int main(void)
     camera2d.zoom = 1.0f;
 
     // Mouse selected cell for maze editing
-    Point selectedCell = { 0 };
-    Point imagePoint = { 0 };
+    Point selected_cell = { 0 };
+    Point image_point = { 0 };
     
     // Maze items position and state
-    Point mazeItems[MAX_MAZE_ITEMS] = { 0 };
-    bool mazeItemPicked[MAX_MAZE_ITEMS] = { 0 };
-    int playerScore = 0;
-    int itemsCount = LoadItems(imMaze, mazeItems, mazeItemPicked); // Number of items in map
+    Point maze_items[MAX_MAZE_ITEMS] = { 0 };
+    bool maze_item_picked[MAX_MAZE_ITEMS] = { 0 };
+    int player_score = 0;
+    int items_count = LoadItems(im_maze, maze_items, maze_item_picked); // Number of items in map
 
     
     // Define textures to be used as our "biomes"
-    // DONE: Load additional textures for different biomes
-    Texture texBiomes[5] = { 0 };
-    texBiomes[0] = LoadTexture("resources/maze_atlas01.png");
-    texBiomes[1] = LoadTexture("resources/maze_atlas02.png");
-    texBiomes[2] = LoadTexture("resources/maze_atlas03.png");
-    texBiomes[3] = LoadTexture("resources/maze_atlas04.png");
-    texBiomes[4] = LoadTexture("resources/maze_atlas05.png");
+    // TODO: Load additional textures for different biomes
+    Texture tex_biomes[5] = { 0 };
+    tex_biomes[0] = LoadTexture("resources/maze_atlas01.png");
+    tex_biomes[1] = LoadTexture("resources/maze_atlas02.png");
+    tex_biomes[2] = LoadTexture("resources/maze_atlas03.png");
+    tex_biomes[3] = LoadTexture("resources/maze_atlas04.png");
+    tex_biomes[4] = LoadTexture("resources/maze_atlas05.png");
     int currentBiome = 0;
-    
-    
     
 
     // TODO: Define all variables required for game UI elements (sprites, fonts...)
-    Texture2D playerTex = LoadTexture("resources/player_sprite.png"); 
-    Texture itemTex = LoadTexture("resources/item_sprite.png");
-    Rectangle playerSrcRec = { 0.0f, 0.0f, (float)playerTex.width, (float)playerTex.height };
-    Vector2 playerOrigin = {0,0};
+    Texture2D player_tex = LoadTexture("resources/player_sprite.png"); 
+    Texture item_tex = LoadTexture("resources/item_sprite.png");
+    Rectangle player_src_rec = { 0.0f, 0.0f, (float)player_tex.width, (float)player_tex.height };
+    Vector2 player_origin = {0,0};
     
     
     // Sound variables definition
@@ -130,13 +128,10 @@ int main(void)
     SetMusicVolume(music, 0.5f);
     PlayMusicStream(music);
     
-    Sound itemFx = LoadSound("resources/coin_sfx.wav");
-    SetSoundVolume(itemFx, 0.6f);
+    Sound item_sfx = LoadSound("resources/coin_sfx.wav");
+    SetSoundVolume(item_sfx, 0.6f);
     
-    
-
-    
-    
+    bool ended = false;
 
     SetTargetFPS(60);       // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
@@ -148,272 +143,270 @@ int main(void)
         //----------------------------------------------------------------------------------
         // Select current mode as desired
         UpdateMusicStream(music);
-        if (IsKeyPressed(KEY_R))
+        if (!ended)
         {
-            // DONE: Set a new seed and re-generate maze
-            
-            UnloadTexture(texMaze);
-            UnloadImage(imMaze);
-            
-            seed += 1;
-            SetRandomSeed(seed);
-            
-            Image imMaze = GenImageMaze(MAZE_WIDTH, MAZE_HEIGHT, 4, 4, 1.0f);
-            ImageDrawPixel(&imMaze, endCell.x, endCell.y, GREEN);
-            itemsCount = LoadItems(imMaze, mazeItems, mazeItemPicked);
-            
-            texMaze = LoadTextureFromImage(imMaze);
-        }
-        
-        if (IsKeyPressed(KEY_SPACE)) currentMode = !currentMode; // Toggle mode: 0-Game, 1-Editor
-
-        if (currentMode == 0) // Game mode
-        {
-            // TODO: [2p] Player 2D movement from predefined Start-point to End-point
-            // Implement maze 2D player movement logic (cursors || WASD)
-            // Use imMaze pixel information to check collisions
-            // Detect if current playerCell == endCell to finish game
-            itemsCount = LoadItems(imMaze, mazeItems, mazeItemPicked);
-            Rectangle prevPlayer = player;
-            
-            Point prevPlayerCell = playerCell;
-            if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W)) player.y -= (playerSpeed * GetFrameTime());
-            if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S)) player.y += (playerSpeed * GetFrameTime());
-            if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) player.x -= (playerSpeed * GetFrameTime());
-            if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) player.x += (playerSpeed * GetFrameTime());
-            
-            playerCell.x = (int)((player.x + player.width/2 - mazePosition.x)/128.0f);
-            playerCell.y = (int)((player.y + player.height/2 - mazePosition.y)/128.0f);
-            
-            playerBounds[0] = (Rectangle){ mazePosition.x + playerCell.x*128.0f, mazePosition.y + (playerCell.y -1)*128.0f, 128.0f, 128.0f };
-            playerBounds[1] = (Rectangle){ mazePosition.x + (playerCell.x -1)*128.0f, mazePosition.y + playerCell.y*128.0f, 128.0f, 128.0f };
-            playerBounds[2] = (Rectangle){ mazePosition.x + playerCell.x*128.0f, mazePosition.y + (playerCell.y +1)*128.0f, 128.0f, 128.0f };
-            playerBounds[3] = (Rectangle){ mazePosition.x + (playerCell.x +1)*128.0f, mazePosition.y + playerCell.y*128.0f, 128.0f, 128.0f };
-            
-            if ((CheckCollisionRecs(player, playerBounds[0]) && ColorIsEqual(GetImageColor(imMaze, playerCell.x, playerCell.y - 1), WHITE)) ||
-                (CheckCollisionRecs(player, playerBounds[1]) && ColorIsEqual(GetImageColor(imMaze, playerCell.x - 1, playerCell.y), WHITE)) ||
-                (CheckCollisionRecs(player, playerBounds[2]) && ColorIsEqual(GetImageColor(imMaze, playerCell.x, playerCell.y + 1), WHITE)) ||
-                (CheckCollisionRecs(player, playerBounds[3]) && ColorIsEqual(GetImageColor(imMaze, playerCell.x + 1, playerCell.y), WHITE)))
+            if (IsKeyPressed(KEY_R))
             {
-                player = prevPlayer;
-            }
-            
-            if (playerCell.x != prevPlayerCell.x || playerCell.y != prevPlayerCell.y) {
-					cellChange = true;
-                }
-            
-            if (playerCell.x == endCell.x && playerCell.y == endCell.y) {
-                currentMode = !currentMode;
-            }
-            
-            
-            
-            // DONE: [1p] Camera 2D system following player movement around the map
-            // Update Camera2D parameters as required to follow player and zoom control
-
-            camera2d.target = (Vector2){ player.x + 20.0f, player.y + 20.0f };
-
-            // TODO: [2p] Maze items pickup logic
-            for (int i = 0; i < itemsCount; i++)
-            {
-                if (!mazeItemPicked[i] && playerCell.x == mazeItems[i].x && playerCell.y == mazeItems[i].y)
-                {
-                    mazeItemPicked[i] = true;
-                    playerScore += 1;                   
-                    ImageDrawPixel(&imMaze, mazeItems[i].x, mazeItems[i].y, BLACK);
-                    UnloadTexture(texMaze);
-                    texMaze = LoadTextureFromImage(imMaze);
-                    PlaySound(itemFx);
-                }
-            }
-        }
-        else if (currentMode == 1) // Editor mode
-        {
-            // DONE: [2p] Maze editor mode, edit image pixels with mouse.
-            // Implement logic to selecte image cell from mouse position -> TIP: GetMousePosition()
-            // NOTE: Mouse position is returned in screen coordinates and it has to 
-            // transformed into image coordinates
-            // Once the cell is selected, if mouse button pressed add/remove image pixels
-            
-            // WARNING: Remember that when imMaze changes, texMaze must be also updated!
-
-            selectedCell = (Point) { GetMousePosition().x, GetMousePosition().y };
-            
-            imagePoint.x = (selectedCell.x - mazePosition.x)/MAZE_SCALE;
-            imagePoint.y = (selectedCell.y - mazePosition.y)/MAZE_SCALE;
-            
-            if ((imagePoint.x >= 0) && (imagePoint.y >= 0) && 
-               (imagePoint.x < imMaze.width) && 
-               (imagePoint.y < imMaze.height))
-            {
-                if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && IsKeyDown(KEY_LEFT_CONTROL))
-                {
-                    ImageDrawPixel(&imMaze, imagePoint.x, imagePoint.y, GREEN);
-                    
-                    UnloadTexture(texMaze);
-                    texMaze = LoadTextureFromImage(imMaze);
-                }
-                else if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON))
-                {
-                    ImageDrawPixel(&imMaze, imagePoint.x, imagePoint.y, WHITE);
-                    
-                    UnloadTexture(texMaze);
-                    texMaze = LoadTextureFromImage(imMaze);
-                } 
-                else if (IsMouseButtonDown(MOUSE_MIDDLE_BUTTON))
-                {
-                    ImageDrawPixel(&imMaze, imagePoint.x, imagePoint.y, RED);
-                    
-                    UnloadTexture(texMaze);
-                    texMaze = LoadTextureFromImage(imMaze);
-                } 
-                else if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
-                {
-                    ImageDrawPixel(&imMaze, imagePoint.x, imagePoint.y, BLACK);
-                    
-                    UnloadTexture(texMaze);
-                    texMaze = LoadTextureFromImage(imMaze);
-                } 
-            }
-            // TODO: [2p] Collectible map items: player score
-            // Using same mechanism than maze editor, implement an items editor, registering
-            // points in the map where items should be added for player pickup -> TIP: Use mazeItems[]
-        }
-
-        // DONE: [1p] Multiple maze biomes supported
-        // Implement changing between the different textures to be used as biomes
-        // NOTE: For the 3d model, the current selected texture must be applied to the model material  
-
-        if (IsKeyDown(KEY_ONE)) currentBiome = 0;
-        if (IsKeyDown(KEY_TWO)) currentBiome = 1;
-        if (IsKeyDown(KEY_THREE)) currentBiome = 2;
-        if (IsKeyDown(KEY_FOUR)) currentBiome = 3;
-        if (IsKeyDown(KEY_FIVE)) currentBiome = 4;
-
-
-        //----------------------------------------------------------------------------------
-
-        // Draw
-        //----------------------------------------------------------------------------------
-        BeginDrawing();
-
-            ClearBackground(RAYWHITE);
-
-            if (currentMode == 0) // Game mode
-            {
-                // Draw maze using camera2d (for automatic positioning and scale)
-                BeginMode2D(camera2d);
-                    
-                // DONE: Draw maze walls and floor using current texture biome 
+                // TODO: Set a new seed and re-generate maze
+                UnloadTexture(tex_maze);
+                UnloadImage(im_maze);
                 
-                DrawTextureEx(texMaze, mazePosition, 0.0f, MAZE_SCALE, WHITE);
+                seed += 1;
+                SetRandomSeed(seed);
                 
-                for (int y = 0; y < imMaze.height; y++)
+                Image im_maze = GenImageMaze(MAZE_WIDTH, MAZE_HEIGHT, 4, 4, 1.0f);
+                ImageDrawPixel(&im_maze, end_cell.x, end_cell.y, GREEN);
+                items_count = LoadItems(im_maze, maze_items, maze_item_picked);
+                
+                tex_maze = LoadTextureFromImage(im_maze);
+            }
+            
+            if (IsKeyPressed(KEY_SPACE)) current_mode = !current_mode; // Toggle mode: 0-Game, 1-Editor
+
+            if (current_mode == 0) // Game mode
+            {
+                // TODO: [2p] Player 2D movement from predefined Start-point to End-point
+                // Implement maze 2D player movement logic (cursors || WASD)
+                // Use im_maze pixel information to check collisions
+                // Detect if current player_cell == end_cell to finish game
+                items_count = LoadItems(im_maze, maze_items, maze_item_picked);
+                Rectangle prev_player = player;
+                
+                Point prev_player_cell = player_cell;
+                if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W)) player.y -= (player_speed * GetFrameTime());
+                if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S)) player.y += (player_speed * GetFrameTime());
+                if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) player.x -= (player_speed * GetFrameTime());
+                if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) player.x += (player_speed * GetFrameTime());
+                
+                player_cell.x = (int)((player.x + player.width/2 - maze_position.x)/128.0f);
+                player_cell.y = (int)((player.y + player.height/2 - maze_position.y)/128.0f);
+                
+                player_bounds[0] = (Rectangle){ maze_position.x + player_cell.x*128.0f, maze_position.y + (player_cell.y -1)*128.0f, 128.0f, 128.0f };
+                player_bounds[1] = (Rectangle){ maze_position.x + (player_cell.x -1)*128.0f, maze_position.y + player_cell.y*128.0f, 128.0f, 128.0f };
+                player_bounds[2] = (Rectangle){ maze_position.x + player_cell.x*128.0f, maze_position.y + (player_cell.y +1)*128.0f, 128.0f, 128.0f };
+                player_bounds[3] = (Rectangle){ maze_position.x + (player_cell.x +1)*128.0f, maze_position.y + player_cell.y*128.0f, 128.0f, 128.0f };
+                
+                if ((CheckCollisionRecs(player, player_bounds[0]) && ColorIsEqual(GetImageColor(im_maze, player_cell.x, player_cell.y - 1), WHITE)) ||
+                    (CheckCollisionRecs(player, player_bounds[1]) && ColorIsEqual(GetImageColor(im_maze, player_cell.x - 1, player_cell.y), WHITE)) ||
+                    (CheckCollisionRecs(player, player_bounds[2]) && ColorIsEqual(GetImageColor(im_maze, player_cell.x, player_cell.y + 1), WHITE)) ||
+                    (CheckCollisionRecs(player, player_bounds[3]) && ColorIsEqual(GetImageColor(im_maze, player_cell.x + 1, player_cell.y), WHITE)))
                 {
-                    for (int x = 0; x < imMaze.width; x++) 
+                    player = prev_player;
+                }
+                
+                if (player_cell.x != prev_player_cell.x || player_cell.y != prev_player_cell.y) {
+                        cell_change = true;
+                    }
+                
+                if (player_cell.x == end_cell.x && player_cell.y == end_cell.y) {
+                    ended = true;
+                }
+                
+                // TODO: [1p] Camera 2D system following player movement around the map
+                // Update Camera2D parameters as required to follow player and zoom control
+                camera2d.target = (Vector2){ player.x + 20.0f, player.y + 20.0f };
+
+                // TODO: [2p] Maze items pickup logic
+                for (int i = 0; i < items_count; i++)
+                {
+                    if (!maze_item_picked[i] && player_cell.x == maze_items[i].x && player_cell.y == maze_items[i].y)
                     {
-                        if (ColorIsEqual(GetImageColor(imMaze, x, y), WHITE))
-                        {
-                            DrawTextureRec(texBiomes[currentBiome], (Rectangle){ 0, texBiomes[currentBiome].height/2, texBiomes[currentBiome].width/2, texBiomes[currentBiome].height/2 }, (Vector2) { mazePosition.x + x* texBiomes[currentBiome].width/2, mazePosition.y + y* texBiomes[currentBiome].height/2}, WHITE);
-                        }
-                        else if (ColorIsEqual(GetImageColor(imMaze, x, y), GREEN)) 
-                        {
-                            DrawTextureRec(texBiomes[currentBiome], (Rectangle){ 0, 0, texBiomes[currentBiome].width/2, texBiomes[currentBiome].height/2 }, (Vector2) { mazePosition.x + x* texBiomes[currentBiome].width/2, mazePosition.y + y* texBiomes[currentBiome].height/2}, WHITE);
-                        }
-                        else
-                        {
-                            DrawTextureRec(texBiomes[currentBiome], (Rectangle) { texBiomes[currentBiome].width/2, texBiomes[currentBiome].height / 2,texBiomes[currentBiome].width / 2, texBiomes[currentBiome].height / 2 }, (Vector2) { mazePosition.x + x * texBiomes[currentBiome].width / 2, mazePosition.y + y * texBiomes[currentBiome].height / 2 }, WHITE);
-                        }
+                        maze_item_picked[i] = true;
+                        player_score += 1;                   
+                        ImageDrawPixel(&im_maze, maze_items[i].x, maze_items[i].y, BLACK);
+                        UnloadTexture(tex_maze);
+                        tex_maze = LoadTextureFromImage(im_maze);
+                        PlaySound(item_sfx);
                     }
                 }
-                
-                // DONE: Draw player rectangle or sprite at player position
-                
-                Rectangle playerDestRec = { player.x + player.width/2.0f, player.y + player.height/2.0f, (float)playerTex.width * MAZE_SCALE/2.0f, (float)playerTex.height * MAZE_SCALE/2.0f };
-                Vector2 playerOrigin = { (playerDestRec.width / 2.0f), (playerDestRec.height / 2.0f) };
-                DrawTexturePro(playerTex, playerSrcRec, playerDestRec, playerOrigin, 0.0f, WHITE);
-                // TODO: Draw maze items 2d (using sprite texture?)
-                
-                for (int i = 0; i < itemsCount; i++)
-                {
-                    if (!mazeItemPicked[i])
-                    {
-                        float centerX = mazePosition.x + (mazeItems[i].x * texBiomes[currentBiome].width/2 + texBiomes[currentBiome].width/4 ); 
-                        float centerY = mazePosition.y + (mazeItems[i].y * texBiomes[currentBiome].height/2 + texBiomes[currentBiome].height/4);
-                        
-                        Rectangle destRec = { centerX, centerY, (float)itemTex.width*4, (float)itemTex.height*4};
-                        Rectangle srcRec = { 0, 0, (float)itemTex.width, (float)itemTex.height };
-                        Vector2 currentItemOrigin = { destRec.width / 2.0f, destRec.height / 2.0f };
-                        
-                        DrawTexturePro(itemTex, srcRec, destRec, currentItemOrigin, 0.0f, WHITE);
-                    }
-                }
-
-                EndMode2D();
-
-                // TODO: Draw game UI (score, time...) using custom sprites/fonts
-                // NOTE: Game UI does not receive the camera2d transformations,
-                // it is drawn in screen space coordinates directly
-                
-                DrawText(TextFormat("SCORE: %i", playerScore), 10, 130, 30, GOLD); // Item pickup score
-                
-                DrawText("GAME MODE", 10, 40, 20, BLACK);
-                
-				if (cellChange) {
-					ImageDrawPixel(&imMaze, playerCell.x, playerCell.y, BLUE);
-					UnloadTexture(texMaze);
-					texMaze = LoadTextureFromImage(imMaze);
-					ImageDrawPixel(&imMaze, playerCell.x, playerCell.y, BLACK);
-                    cellChange = false;
-				}
-                
-                DrawTextureEx(texMaze, (Vector2){ GetRenderWidth() -  200,  10}, 0.0f, 3, WHITE); //Minimap
-                
             }
-            else if (currentMode == 1) // Editor mode
+            else if (current_mode == 1) // Editor mode
             {
-                // Draw generated maze texture, scaled and centered on screen 
-                DrawTextureEx(texMaze, mazePosition, 0.0f, MAZE_SCALE, WHITE);
-
-                if((imagePoint.x >= 0) && (imagePoint.y >= 0) && 
-                   (imagePoint.x < imMaze.width) && 
-                   (imagePoint.y < imMaze.height))
+                // TODO: [2p] Maze editor mode, edit image pixels with mouse.
+                // Implement logic to selecte image cell from mouse position -> TIP: GetMousePosition()
+                // NOTE: Mouse position is returned in screen coordinates and it has to 
+                // transformed into image coordinates
+                // Once the cell is selected, if mouse button pressed add/remove image pixels
+                
+                // WARNING: Remember that when im_maze changes, tex_maze must be also updated!
+                selected_cell = (Point) { GetMousePosition().x, GetMousePosition().y };
+                
+                image_point.x = (selected_cell.x - maze_position.x)/MAZE_SCALE;
+                image_point.y = (selected_cell.y - maze_position.y)/MAZE_SCALE;
+                
+                if ((image_point.x >= 0) && (image_point.y >= 0) && 
+                   (image_point.x < im_maze.width) && 
+                   (image_point.y < im_maze.height))
                 {
-                    DrawRectangleLines(mazePosition.x+imagePoint.x*MAZE_SCALE, 
-                    mazePosition.y+imagePoint.y*MAZE_SCALE, MAZE_SCALE, MAZE_SCALE, GREEN);
+                    if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && IsKeyDown(KEY_LEFT_CONTROL))
+                    {
+                        ImageDrawPixel(&im_maze, end_cell.x, end_cell.y, BLACK);
+                        ImageDrawPixel(&im_maze, image_point.x, image_point.y, GREEN);
+                        end_cell.x = image_point.x;
+                        end_cell.y = image_point.y;
+                        
+                        UnloadTexture(tex_maze);
+                        tex_maze = LoadTextureFromImage(im_maze);
+                    }
+                    else if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON))
+                    {
+                        ImageDrawPixel(&im_maze, image_point.x, image_point.y, WHITE);
+                        
+                        UnloadTexture(tex_maze);
+                        tex_maze = LoadTextureFromImage(im_maze);
+                    } 
+                    else if (IsMouseButtonDown(MOUSE_MIDDLE_BUTTON))
+                    {
+                        ImageDrawPixel(&im_maze, image_point.x, image_point.y, RED);
+                        
+                        UnloadTexture(tex_maze);
+                        tex_maze = LoadTextureFromImage(im_maze);
+                    } 
+                    else if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
+                    {
+                        ImageDrawPixel(&im_maze, image_point.x, image_point.y, BLACK);
+                        
+                        UnloadTexture(tex_maze);
+                        tex_maze = LoadTextureFromImage(im_maze);
+                    } 
                 }
-                
-                DrawText("EDIT MODE", 10, 40, 20, BLACK);
-                
-                DrawText(TextFormat("MOUSE: [%i, %i]", selectedCell.x, selectedCell.y), 10, 70, 20, DARKBLUE);
-                DrawText(TextFormat("IMAGE: [%i, %i]", imagePoint.x, imagePoint.y), 10, 100, 20, RED);
-
-                // Draw lines rectangle over texture, scaled and centered on screen 
-                DrawRectangleLines(mazePosition.x, mazePosition.y, MAZE_WIDTH*MAZE_SCALE, MAZE_HEIGHT*MAZE_SCALE, RED);
-
-                // DONE: Draw player using a rectangle, consider maze screen coordinates!
-
-                DrawRectangleRec((Rectangle){ (player.x - mazePosition.x) * (MAZE_SCALE / 128.0f) + mazePosition.x , (player.y - mazePosition.y) * (MAZE_SCALE / 128.0f) + mazePosition.y, player.width/MAZE_SCALE , player.height/MAZE_SCALE } , BLUE);
-    
-                
-    
-                // TODO: Draw editor UI required elements
+                // TODO: [2p] Collectible map items: player score
+                // Using same mechanism than maze editor, implement an items editor, registering
+                // points in the map where items should be added for player pickup -> TIP: Use maze_items[]
             }
 
-            DrawFPS(10, 10);
+            // TODO: [1p] Multiple maze biomes supported
+            // Implement changing between the different textures to be used as biomes
+            // NOTE: For the 3d model, the current selected texture must be applied to the model material  
+            if (IsKeyDown(KEY_ONE)) currentBiome = 0;
+            if (IsKeyDown(KEY_TWO)) currentBiome = 1;
+            if (IsKeyDown(KEY_THREE)) currentBiome = 2;
+            if (IsKeyDown(KEY_FOUR)) currentBiome = 3;
+            if (IsKeyDown(KEY_FIVE)) currentBiome = 4;
 
-        EndDrawing();
+
+            //----------------------------------------------------------------------------------
+
+            // Draw
+            //----------------------------------------------------------------------------------
+            BeginDrawing();
+
+                ClearBackground(RAYWHITE);
+
+                   if (current_mode == 0) // Game mode
+                    {
+                        // Draw maze using camera2d (for automatic positioning and scale)
+                        BeginMode2D(camera2d);
+                            
+                        // TODO: Draw maze walls and floor using current texture biome 
+                        DrawTextureEx(tex_maze, maze_position, 0.0f, MAZE_SCALE, WHITE);
+                        
+                        for (int y = 0; y < im_maze.height; y++)
+                        {
+                            for (int x = 0; x < im_maze.width; x++) 
+                            {
+                                if (ColorIsEqual(GetImageColor(im_maze, x, y), WHITE))
+                                {
+                                    DrawTextureRec(tex_biomes[currentBiome], (Rectangle){ 0, tex_biomes[currentBiome].height/2, tex_biomes[currentBiome].width/2, tex_biomes[currentBiome].height/2 }, (Vector2) { maze_position.x + x* tex_biomes[currentBiome].width/2, maze_position.y + y* tex_biomes[currentBiome].height/2}, WHITE);
+                                }
+                                else if (ColorIsEqual(GetImageColor(im_maze, x, y), GREEN)) 
+                                {
+                                    DrawTextureRec(tex_biomes[currentBiome], (Rectangle){ tex_biomes[currentBiome].width/2, 0, tex_biomes[currentBiome].width/2, tex_biomes[currentBiome].height/2 }, (Vector2) { maze_position.x + x* tex_biomes[currentBiome].width/2, maze_position.y + y* tex_biomes[currentBiome].height/2}, WHITE);
+                                }
+                                else
+                                {
+                                    DrawTextureRec(tex_biomes[currentBiome], (Rectangle) { tex_biomes[currentBiome].width/2, tex_biomes[currentBiome].height / 2,tex_biomes[currentBiome].width / 2, tex_biomes[currentBiome].height / 2 }, (Vector2) { maze_position.x + x * tex_biomes[currentBiome].width / 2, maze_position.y + y * tex_biomes[currentBiome].height / 2 }, WHITE);
+                                }
+                            }
+                        }
+                        
+                        // TODO: Draw player rectangle or sprite at player position
+                        Rectangle player_dest_rec = { player.x + player.width/2.0f, player.y + player.height/2.0f, (float)player_tex.width * MAZE_SCALE/2.0f, (float)player_tex.height * MAZE_SCALE/2.0f };
+                        Vector2 player_origin = { (player_dest_rec.width / 2.0f), (player_dest_rec.height / 2.0f) };
+                        DrawTexturePro(player_tex, player_src_rec, player_dest_rec, player_origin, 0.0f, WHITE);
+                        
+                        // TODO: Draw maze items 2d (using sprite texture?)
+                        for (int i = 0; i < items_count; i++)
+                        {
+                            if (!maze_item_picked[i])
+                            {
+                                float center_x = maze_position.x + (maze_items[i].x * tex_biomes[currentBiome].width/2 + tex_biomes[currentBiome].width/4 ); 
+                                float center_y = maze_position.y + (maze_items[i].y * tex_biomes[currentBiome].height/2 + tex_biomes[currentBiome].height/4);
+                                
+                                Rectangle destRec = { center_x, center_y, (float)item_tex.width*4, (float)item_tex.height*4};
+                                Rectangle srcRec = { 0, 0, (float)item_tex.width, (float)item_tex.height };
+                                Vector2 currentItemOrigin = { destRec.width / 2.0f, destRec.height / 2.0f };
+                                
+                                DrawTexturePro(item_tex, srcRec, destRec, currentItemOrigin, 0.0f, WHITE);
+                            }
+                        }
+
+                        EndMode2D();
+
+                        // TODO: Draw game UI (score, time...) using custom sprites/fonts
+                        // NOTE: Game UI does not receive the camera2d transformations,
+                        // it is drawn in screen space coordinates directly
+                        DrawText(TextFormat("SCORE: %i", player_score), 10, 40, 40, GOLD); // Item pickup score
+                        
+                        DrawText("GAME MODE", 10, GetScreenHeight() - 90, 20, BLACK);
+                        
+                        if (cell_change) {
+                            ImageDrawPixel(&im_maze, player_cell.x, player_cell.y, BLUE);
+                            UnloadTexture(tex_maze);
+                            tex_maze = LoadTextureFromImage(im_maze);
+                            ImageDrawPixel(&im_maze, player_cell.x, player_cell.y, BLACK);
+                            cell_change = false;
+                        }
+                        DrawTextureEx(tex_maze, (Vector2){ GetRenderWidth() -  200,  10}, 0.0f, 3, WHITE); //Minimap
+                    }
+                    else if (current_mode == 1) // Editor mode
+                    {
+                        // Draw generated maze texture, scaled and centered on screen 
+                        DrawTextureEx(tex_maze, maze_position, 0.0f, MAZE_SCALE, WHITE);
+                    
+                        if((image_point.x >= 0) && (image_point.y >= 0) && 
+                           (image_point.x < im_maze.width) && 
+                           (image_point.y < im_maze.height))
+                        {
+                            DrawRectangleLines(maze_position.x+image_point.x*MAZE_SCALE, 
+                            maze_position.y+image_point.y*MAZE_SCALE, MAZE_SCALE, MAZE_SCALE, GREEN);
+                        }
+
+                        // Draw lines rectangle over texture, scaled and centered on screen 
+                        DrawRectangleLines(maze_position.x, maze_position.y, MAZE_WIDTH*MAZE_SCALE, MAZE_HEIGHT*MAZE_SCALE, RED);
+
+                        // TODO: Draw player using a rectangle, consider maze screen coordinates!
+                        
+                        DrawRectangleRec((Rectangle){ (player.x - maze_position.x) * (MAZE_SCALE / 128.0f) + maze_position.x , (player.y - maze_position.y) * (MAZE_SCALE / 128.0f) + maze_position.y, player.width/MAZE_SCALE , player.height/MAZE_SCALE } , BLUE);
+            
+                        // TODO: Draw editor UI required elements
+                        DrawText("EDIT MODE", 10, GetScreenHeight() - 90, 20, BLACK);
+                        
+                        DrawText(TextFormat("MOUSE: [%i, %i]", selected_cell.x, selected_cell.y), 10, 40, 20, DARKBLUE);
+                        DrawText(TextFormat("IMAGE: [%i, %i]", image_point.x, image_point.y), 10, 70, 20, RED);
+                    }
+                    
+                    DrawFPS(10, 10);
+                    DrawText("[SPACE] TOGGLE MODE: EDITOR/GAME", 10, GetScreenHeight() - 60, 20, LIGHTGRAY);
+                    DrawText("[R]: GENERATE NEW RANDOM SEQUENCE", 10, GetScreenHeight() - 30, 20, LIGHTGRAY);
+                    
+                    EndDrawing();                   
+                }
+                else {
+                    EndScene(player_score);
+                    
+                }
         //----------------------------------------------------------------------------------
     }
 
     // De-Initialization
     //--------------------------------------------------------------------------------------
-    UnloadTexture(texMaze);     // Unload maze texture from VRAM (GPU)
-    UnloadImage(imMaze);        // Unload maze image from RAM (CPU)
-    UnloadTexture(playerTex); // Unload player texture
-    UnloadTexture(itemTex);
+    UnloadTexture(tex_maze);     // Unload maze texture from VRAM (GPU)
+    UnloadImage(im_maze);        // Unload maze image from RAM (CPU)
+    UnloadTexture(player_tex); // Unload player texture
+    UnloadTexture(item_tex);
     UnloadMusicStream(music);
-    UnloadSound(itemFx);
+    UnloadSound(item_sfx);
     CloseAudioDevice();
     
     CloseWindow();              // Close window and OpenGL context
@@ -426,73 +419,73 @@ int main(void)
 
 // Generate procedural maze image, using grid-based algorithm
 // NOTE: Color scheme used: WHITE = Wall, BLACK = Walkable, RED = Item
-static Image GenImageMaze(int width, int height, int spacingRows, int spacingCols, float pointChance)
+static Image GenImageMaze(int width, int height, int spacing_rows, int spacing_cols, float point_chance)
 {
-    // DONE: [1p] Implement maze image generation algorithm
+    // TODO: [1p] Implement maze image generation algorithm
     
-    Image imMaze = GenImageColor(width, height, BLACK);
+    Image im_maze = GenImageColor(width, height, BLACK);
     
-    Point *mazePoints = malloc(MAZE_HEIGHT*MAZE_WIDTH*sizeof(Point));
+    Point *maze_points = malloc(MAZE_HEIGHT*MAZE_WIDTH*sizeof(Point));
     
-    int mazePointCounter = 0;
+    int maze_point_counter = 0;
     
-    for (int y = 0; y < imMaze.height; y++)
+    for (int y = 0; y < im_maze.height; y++)
     {
-        for (int x = 0; x < imMaze.width; x++)
+        for (int x = 0; x < im_maze.width; x++)
         {
-            if ((x == 0) || (y == 0) || (x == (imMaze.width - 1)) || (y == (imMaze.height - 1))) 
+            if ((x == 0) || (y == 0) || (x == (im_maze.width - 1)) || (y == (im_maze.height - 1))) 
             {
-                ImageDrawPixel(&imMaze, x, y, WHITE);
+                ImageDrawPixel(&im_maze, x, y, WHITE);
             }
             else 
             {
-                if ((x%spacingRows == 0) && (y%spacingCols == 0)) 
+                if ((x%spacing_rows == 0) && (y%spacing_cols == 0)) 
                 {
-                    if (GetRandomValue(0, 100)<pointChance*100)
+                    if (GetRandomValue(0, 100)<point_chance*100)
                     {
-                        ImageDrawPixel(&imMaze, x, y, WHITE);
-                        mazePoints[mazePointCounter] = (Point) { x, y }; // Inicializa los valores: x = x , y = y
-                        mazePointCounter++;
+                        ImageDrawPixel(&im_maze, x, y, WHITE);
+                        maze_points[maze_point_counter] = (Point) { x, y }; // Inicializa los valores: x = x , y = y
+                        maze_point_counter++;
                     }
                 }
             }
         }
     }
     
-    Point dirIncrements[4] = {
+    Point dir_increments[4] = {
         {0,-1},
         {1,0},
         {0,1},
         {-1,0}
     };
     
-    int *indexes = LoadRandomSequence(mazePointCounter, 0, mazePointCounter - 1);
+    int *indexes = LoadRandomSequence(maze_point_counter, 0, maze_point_counter - 1);
     
-    for (int i = 0; i < mazePointCounter; i++)
+    for (int i = 0; i < maze_point_counter; i++)
     {
         int dir = GetRandomValue(0,3);
-        Point nextMazePoint = mazePoints[indexes[i]];
-        nextMazePoint.x += dirIncrements[dir].x;
-        nextMazePoint.y += dirIncrements[dir].y;
+        Point next_maze_point = maze_points[indexes[i]];
+        next_maze_point.x += dir_increments[dir].x;
+        next_maze_point.y += dir_increments[dir].y;
         
-        while (ColorIsEqual(GetImageColor(imMaze, nextMazePoint.x, nextMazePoint.y), BLACK))
+        while (ColorIsEqual(GetImageColor(im_maze, next_maze_point.x, next_maze_point.y), BLACK))
         {    
-            ImageDrawPixel(&imMaze, nextMazePoint.x, nextMazePoint.y, WHITE);
+            ImageDrawPixel(&im_maze, next_maze_point.x, next_maze_point.y, WHITE);
             
-            nextMazePoint.x += dirIncrements[dir].x;
-            nextMazePoint.y += dirIncrements[dir].y;
+            next_maze_point.x += dir_increments[dir].x;
+            next_maze_point.y += dir_increments[dir].y;
         }
     }
-    int nItems = 0;
-    for (int y = 1; y < imMaze.height - 1; y++)
+    int n_items = 0;
+    for (int y = 1; y < im_maze.height - 1; y++)
     {
-        for (int x = 1; x < imMaze.width - 1; x++)
+        for (int x = 1; x < im_maze.width - 1; x++)
         {
-            if (ColorIsEqual(GetImageColor(imMaze, x, y), BLACK))
+            if (ColorIsEqual(GetImageColor(im_maze, x, y), BLACK))
             {
-                if ((GetRandomValue(0, 1000) < 5 ) && (nItems < MAX_MAZE_ITEMS)) 
+                if ((GetRandomValue(0, 1000) < 5 ) && (n_items < MAX_MAZE_ITEMS)) 
                 {
-                    ImageDrawPixel(&imMaze, x, y, RED);
+                    ImageDrawPixel(&im_maze, x, y, RED);
                     
                 }
             }
@@ -500,24 +493,24 @@ static Image GenImageMaze(int width, int height, int spacingRows, int spacingCol
     }
 
     UnloadRandomSequence(indexes);
-    return imMaze;
+    return im_maze;
 }
 
 // Scan map image to identify RED squares
-static int LoadItems(Image imMaze, Point *mazeItems, bool *mazeItemPicked)
+static int LoadItems(Image im_maze, Point *maze_items, bool *maze_item_picked)
 {
     int count = 0;
     
-    for (int y = 0; y < imMaze.height; y++)
+    for (int y = 0; y < im_maze.height; y++)
     {
-        for (int x = 0; x < imMaze.width; x++)
+        for (int x = 0; x < im_maze.width; x++)
         {
-            if (ColorIsEqual(GetImageColor(imMaze, x, y), RED))
+            if (ColorIsEqual(GetImageColor(im_maze, x, y), RED))
             {
                 if (count < MAX_MAZE_ITEMS)
                 {
-                    mazeItems[count] = (Point){ x, y };
-                    mazeItemPicked[count] = false;
+                    maze_items[count] = (Point){ x, y };
+                    maze_item_picked[count] = false;
                     count++;
                 }
             }
@@ -526,3 +519,14 @@ static int LoadItems(Image imMaze, Point *mazeItems, bool *mazeItemPicked)
     return count; // Returns number of items detected
 }
 
+static void EndScene(int score){
+    BeginDrawing();
+
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), BLACK);
+    DrawText("GAME OVER", GetScreenWidth()/2 - 300, 100, 100, RED);
+    DrawText(TextFormat("SCORE: %i", score), GetScreenWidth()/2 - 140, 300, 60, WHITE);
+    DrawText("Press ESC to exit", GetScreenWidth()/2 - 180, 400, 40, LIGHTGRAY);
+
+    EndDrawing();
+
+}
