@@ -117,7 +117,7 @@ int main(void)
     // TODO: Define all variables required for game UI elements (sprites, fonts...)
     // Player sprite texture
     Texture2D playerTex = LoadTexture("resources/player_sprite.png"); 
-
+    Texture itemTex = LoadTexture("resources/item_sprite.png");
     Rectangle playerSrcRec = { 0.0f, 0.0f, (float)playerTex.width, (float)playerTex.height };
     Vector2 playerOrigin;
 
@@ -299,7 +299,11 @@ int main(void)
                         {
                             DrawTextureRec(texBiomes[currentBiome], (Rectangle){ 0, texBiomes[currentBiome].height/2, texBiomes[currentBiome].width/2, texBiomes[currentBiome].height/2 }, (Vector2) { mazePosition.x + x* texBiomes[currentBiome].width/2, mazePosition.y + y* texBiomes[currentBiome].height/2}, WHITE);
                         }
-                        else if (ColorIsEqual(GetImageColor(imMaze, x, y), BLACK))
+                        else if (ColorIsEqual(GetImageColor(imMaze, x, y), GREEN)) 
+                        {
+                            DrawTextureRec(texBiomes[currentBiome], (Rectangle){ 0, 0, texBiomes[currentBiome].width/2, texBiomes[currentBiome].height/2 }, (Vector2) { mazePosition.x + x* texBiomes[currentBiome].width/2, mazePosition.y + y* texBiomes[currentBiome].height/2}, WHITE);
+                        }
+                        else
                         {
                             DrawTextureRec(texBiomes[currentBiome], (Rectangle) { texBiomes[currentBiome].width/2, texBiomes[currentBiome].height / 2,texBiomes[currentBiome].width / 2, texBiomes[currentBiome].height / 2 }, (Vector2) { mazePosition.x + x * texBiomes[currentBiome].width / 2, mazePosition.y + y * texBiomes[currentBiome].height / 2 }, WHITE);
                         }
@@ -317,10 +321,14 @@ int main(void)
                 {
                     if (!mazeItemPicked[i])
                     {
-                        Vector2 pos = { mazePosition.x + mazeItems[i].x * 128.0f + 64.0f, 
-                                        mazePosition.y + mazeItems[i].y * 128.0f + 64.0f };
-                        DrawCircleV(pos, 25, RED); 
-                        DrawCircleLinesV(pos, 25, MAROON);
+                        float centerX = mazePosition.x + (mazeItems[i].x * texBiomes[currentBiome].width/2 + texBiomes[currentBiome].width/4 ); 
+                        float centerY = mazePosition.y + (mazeItems[i].y * texBiomes[currentBiome].height/2 + texBiomes[currentBiome].height/4);
+                        
+                        Rectangle destRec = { centerX, centerY, (float)itemTex.width*4, (float)itemTex.height*4};
+                        Rectangle srcRec = { 0, 0, (float)itemTex.width, (float)itemTex.height };
+                        Vector2 currentItemOrigin = { destRec.width / 2.0f, destRec.height / 2.0f };
+                        
+                        DrawTexturePro(itemTex, srcRec, destRec, currentItemOrigin, 0.0f, WHITE);
                     }
                 }
 
@@ -386,6 +394,7 @@ int main(void)
     UnloadTexture(texMaze);     // Unload maze texture from VRAM (GPU)
     UnloadImage(imMaze);        // Unload maze image from RAM (CPU)
     UnloadTexture(playerTex); // Unload player texture
+    UnloadTexture(itemTex);
     CloseWindow();              // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
 
