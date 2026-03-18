@@ -46,6 +46,8 @@ int main(void)
     const int screenHeight = 720;
 
     InitWindow(screenWidth, screenHeight, "Delivery04 - maze game");
+    
+    InitAudioDevice();
 
     // Current application mode
     int currentMode = 1;    // 0-Game, 1-Editor
@@ -104,22 +106,34 @@ int main(void)
     
     // Define textures to be used as our "biomes"
     // DONE: Load additional textures for different biomes
-    Texture texBiomes[4] = { 0 };
+    Texture texBiomes[5] = { 0 };
     texBiomes[0] = LoadTexture("resources/maze_atlas01.png");
     texBiomes[1] = LoadTexture("resources/maze_atlas02.png");
     texBiomes[2] = LoadTexture("resources/maze_atlas03.png");
     texBiomes[3] = LoadTexture("resources/maze_atlas04.png");
+    texBiomes[4] = LoadTexture("resources/maze_atlas05.png");
     int currentBiome = 0;
     
     
     
 
     // TODO: Define all variables required for game UI elements (sprites, fonts...)
-    // Player sprite texture
     Texture2D playerTex = LoadTexture("resources/player_sprite.png"); 
     Texture itemTex = LoadTexture("resources/item_sprite.png");
     Rectangle playerSrcRec = { 0.0f, 0.0f, (float)playerTex.width, (float)playerTex.height };
-    Vector2 playerOrigin;
+    Vector2 playerOrigin = {0,0};
+    
+    
+    // Sound variables definition
+    Music music = LoadMusicStream("resources/soft_music.ogg");
+    music.looping = true;
+    SetMusicVolume(music, 0.5f);
+    PlayMusicStream(music);
+    
+    Sound itemFx = LoadSound("resources/coin_sfx.wav");
+    SetSoundVolume(itemFx, 0.6f);
+    
+    
 
     
     
@@ -133,7 +147,7 @@ int main(void)
         // Update
         //----------------------------------------------------------------------------------
         // Select current mode as desired
-        
+        UpdateMusicStream(music);
         if (IsKeyPressed(KEY_R))
         {
             // DONE: Set a new seed and re-generate maze
@@ -209,6 +223,7 @@ int main(void)
                     ImageDrawPixel(&imMaze, mazeItems[i].x, mazeItems[i].y, BLACK);
                     UnloadTexture(texMaze);
                     texMaze = LoadTextureFromImage(imMaze);
+                    PlaySound(itemFx);
                 }
             }
         }
@@ -273,6 +288,8 @@ int main(void)
         if (IsKeyDown(KEY_TWO)) currentBiome = 1;
         if (IsKeyDown(KEY_THREE)) currentBiome = 2;
         if (IsKeyDown(KEY_FOUR)) currentBiome = 3;
+        if (IsKeyDown(KEY_FIVE)) currentBiome = 4;
+
 
         //----------------------------------------------------------------------------------
 
@@ -395,6 +412,10 @@ int main(void)
     UnloadImage(imMaze);        // Unload maze image from RAM (CPU)
     UnloadTexture(playerTex); // Unload player texture
     UnloadTexture(itemTex);
+    UnloadMusicStream(music);
+    UnloadSound(itemFx);
+    CloseAudioDevice();
+    
     CloseWindow();              // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
 
